@@ -3,6 +3,15 @@ use std::net::TcpListener;
 use uuid::Uuid;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
 use zero2prod::startup::run;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+
+lazy_static::lazy_static! {
+    static ref TRACING: () = {
+        let filter = if std::env::var("TEST_LOG").is_ok() { "debug" } else { "" };
+        let subscriber = get_subscriber("test".into(), filter.into());
+        init_subscriber(subscriber);
+    };
+}
 
 pub struct TestApp {
     pub address: String,
@@ -10,14 +19,14 @@ pub struct TestApp {
 }
 
 async fn spawn_app() -> TestApp {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port.");
+    lazy_static::initialize(&TRACING);
 
+    let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port.");
     let port = listener.local_addr().unwrap().port();
     let address = format!("http://127.0.0.1:{}", port);
 
     let mut configuration = get_configuration().expect("Failed to read configuration.");
     configuration.database.database_name = Uuid::new_v4().to_string();
-
     let db_pool = configure_database(&configuration.database).await;
 
     let server = run(listener, db_pool.clone()).expect("Failed to bind address");

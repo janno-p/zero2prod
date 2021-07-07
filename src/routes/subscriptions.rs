@@ -23,12 +23,12 @@ pub async fn subscribe(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, error::Error> {
-    let email = SubscriberEmail::parse(form.0.email).map_err(|err| error::ErrorBadRequest(err))?;
-    let name = SubscriberName::parse(form.0.name).map_err(|err| error::ErrorBadRequest(err))?;
+    let email = SubscriberEmail::parse(form.0.email).map_err(error::ErrorBadRequest)?;
+    let name = SubscriberName::parse(form.0.name).map_err(error::ErrorBadRequest)?;
     let new_subscriber = NewSubscriber { email, name };
     insert_subscriber(&pool, &new_subscriber)
         .await
-        .map_err(|err| error::ErrorInternalServerError(err))?;
+        .map_err(error::ErrorInternalServerError)?;
     Ok(HttpResponse::Ok().finish())
 }
 

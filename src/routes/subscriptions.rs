@@ -1,6 +1,7 @@
 use actix_web::{error, web, HttpResponse, Result};
 use chrono::Utc;
 use sqlx::PgPool;
+use std::convert::TryInto;
 use uuid::Uuid;
 
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
@@ -9,6 +10,16 @@ use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 pub struct FormData {
     email: String,
     name: String,
+}
+
+impl TryInto<NewSubscriber> for FormData {
+    type Error = String;
+
+    fn try_into(self) -> Result<NewSubscriber, Self::Error> {
+        let email = SubscriberEmail::parse(self.email)?;
+        let name = SubscriberName::parse(self.name)?;
+        Ok(NewSubscriber { email, name })
+    }
 }
 
 #[tracing::instrument(
@@ -23,9 +34,7 @@ pub async fn subscribe(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, error::Error> {
-    let email = SubscriberEmail::parse(form.0.email).map_err(error::ErrorBadRequest)?;
-    let name = SubscriberName::parse(form.0.name).map_err(error::ErrorBadRequest)?;
-    let new_subscriber = NewSubscriber { email, name };
+    let new_subscriber = form.0.try_into().map_err(error::ErrorBadRequest)?;
     insert_subscriber(&pool, &new_subscriber)
         .await
         .map_err(error::ErrorInternalServerError)?;

@@ -5,6 +5,7 @@ use std::convert::TryInto;
 use uuid::Uuid;
 
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
+use crate::email_client::EmailClient;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -24,18 +25,28 @@ impl TryInto<NewSubscriber> for FormData {
 
 #[tracing::instrument(
     name = "Adding a new subscriber",
-    skip(form, pool),
+    skip(form, pool, email_client),
     fields(
-        email = %form.email,
-        name = %form.name
+        subscriber_email = %form.email,
+        subscriber_name = %form.name
     )
 )]
 pub async fn subscribe(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
+    email_client: web::Data<EmailClient>,
 ) -> Result<HttpResponse, error::Error> {
     let new_subscriber = form.0.try_into().map_err(error::ErrorBadRequest)?;
     insert_subscriber(&pool, &new_subscriber)
+        .await
+        .map_err(error::ErrorInternalServerError)?;
+    email_client
+        .send_email(
+            new_subscriber.email,
+            "Welcome!",
+            "Welcome to our newsletter!",
+            "Welcome to our newsletter!",
+        )
         .await
         .map_err(error::ErrorInternalServerError)?;
     Ok(HttpResponse::Ok().finish())

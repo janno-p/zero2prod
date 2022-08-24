@@ -20,7 +20,7 @@ jobs:
           - 5432:5432
     env:
       SQLX_VERSION: 0.6.1
-      SQLX_FEATURES: native-tls,postgres
+      SQLX_FEATURES: postgres
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
@@ -50,7 +50,7 @@ jobs:
             sqlx-cli
             --force
             --version=${{ env.SQLX_VERSION }}
-            --features=${{ env.SQLX_FEATURES }}
+            --features=native-tls,${{ env.SQLX_FEATURES }}
             --no-default-features
             --locked
       - run: |
@@ -89,7 +89,7 @@ jobs:
           - 5432:5432
     env:
       SQLX_VERSION: 0.6.1
-      SQLX_FEATURES: native-tls,postgres
+      SQLX_FEATURES: postgres
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -111,7 +111,7 @@ jobs:
             sqlx-cli
             --force
             --version=${{ env.SQLX_VERSION }}
-            --features=${{ env.SQLX_FEATURES }}
+            --features=native-tls,${{ env.SQLX_FEATURES }}
             --no-default-features
             --locked
       - run: |
@@ -136,7 +136,7 @@ jobs:
           - 5432:5432
     env:
       SQLX_VERSION: 0.6.1
-      SQLX_FEATURES: native-tls,postgres
+      SQLX_FEATURES: postgres
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -157,7 +157,7 @@ jobs:
             sqlx-cli
             --force
             --version=${{ env.SQLX_VERSION }}
-            --features=${{ env.SQLX_FEATURES }}
+            --features=native-tls,${{ env.SQLX_FEATURES }}
             --no-default-features
             --locked
       - run: |
